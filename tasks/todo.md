@@ -42,20 +42,20 @@ and `db` (Postgres 16, a healthcheck, a named volume, and an init script that cr
 
 ### Task 3: Database session, Alembic, and test harness
 **Description:** Sync SQLAlchemy engine and session dependency, Alembic configured from settings,
-an entrypoint that runs `alembic upgrade head` before uvicorn, and a pytest `conftest` with a
+a start script (the image's default command) that runs `alembic upgrade head` before uvicorn, and a pytest `conftest` with a
 per-test transaction rolled back against `tracker_test` (with a guard that refuses any other
 database). `/healthz` checks the database.
 
 **Acceptance criteria:**
-- [ ] Container start applies migrations automatically (an empty baseline revision for now)
-- [ ] `make test` runs inside the container against `tracker_test`, and the guard fails fast if
+- [x] Container start applies migrations automatically (an empty baseline revision for now)
+- [x] `make test` runs inside the container against `tracker_test`, and the guard fails fast if
   pointed at `tracker`
-- [ ] `/healthz` returns 503 if the database is unreachable
+- [x] `/healthz` returns 503 if the database is unreachable
 
 **Verification:** `make test` · stop `db` and confirm `/healthz` returns 503
 
 **Dependencies:** 2
-**Files:** `app/db.py`, `migrations/` (env.py, baseline), `alembic.ini`, `docker/entrypoint.sh`,
+**Files:** `app/db.py`, `migrations/` (env.py, baseline), `alembic.ini`, `docker/start.sh`,
 `tests/conftest.py`
 **Scope:** M
 

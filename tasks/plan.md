@@ -31,8 +31,9 @@ start logging real applications after Phase 2.
   effect immediately (success criterion 4). The table is seeded in a migration.
 - **Pure functions for rules.** `needs_follow_up`, `classify_rejection`, `validate_change_date`,
   and `render_export` take plain values (including `today`), so unit tests need no database.
-- **Migrations run at container start** (an entrypoint runs `alembic upgrade head` and then
-  uvicorn), so `docker compose up` alone works on a clean machine.
+- **Migrations run at container start** (`docker/start.sh`, the image's default command, runs
+  `alembic upgrade head` and then uvicorn), so `docker compose up` alone works on a clean machine.
+  One-off `docker compose run app <cmd>` replaces the command, so tests never migrate the real DB.
 - **Tests use a separate `tracker_test` database** in the same Postgres container, created by an
   init script. Each test runs in a transaction that is rolled back afterwards, so real data is
   never touched.

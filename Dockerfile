@@ -24,10 +24,13 @@ FROM base AS runtime
 RUN useradd --create-home --uid 10001 app && install -d -o app -g app /app
 COPY --from=builder /opt/venv /opt/venv
 WORKDIR /app
+COPY --chown=app:app alembic.ini ./
+COPY --chown=app:app migrations ./migrations
+COPY --chown=app:app docker/start.sh ./docker/start.sh
 COPY --chown=app:app app ./app
 USER app
 EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "docker/start.sh"]
 
 # Local image: adds dev deps and tests so `make test` runs inside the container.
 FROM runtime AS dev
