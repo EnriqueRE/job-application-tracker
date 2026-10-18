@@ -5,6 +5,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from app.api import applications
 from app.db import get_session
 
 
@@ -22,6 +23,7 @@ def create_app() -> FastAPI:
             return {"status": "database unavailable"}
         return {"status": "ok"}
 
+    app.include_router(applications.router)
     return app
 
 

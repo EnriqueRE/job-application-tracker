@@ -1,0 +1,70 @@
+from datetime import date
+
+from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
+from app.models import Application, Company
+from app.schemas import ApplicationCreate
+from app.services.status import change_status
+
+DUPLICATE_INDEX = "uq_applications_company_title_applied_on"
+
+
+class DuplicateApplication(Exception):
+    def __init__(self, existing_id: int) -> None:
+        super().__init__("An application with this company, title and date already exists.")
+        self.existing_id = existing_id
+
+
+def get_or_create_company(session: Session, name: str) -> Company:
+    company = session.scalar(select(Company).where(func.lower(Company.name) == name.lower()))
+    if company is None:
+        company = Company(name=name)
+        session.add(company)
+    return company
+
+
+def find_duplicate(
+    session: Session, *, company_id: int, title: str, applied_on: date
+) -> int | None:
+    return session.scalar(
+        select(Application.id).where(
+            Application.company_id == company_id,
+            func.lower(func.trim(Application.title)) == title.strip().lower(),
+            Application.applied_on == applied_on,
+        )
+    )
+
+
+def get_application(session: Session, application_id: int) -> Application | None:
+    return session.get(Application, application_id)
+
+
+def create_application(session: Session, data: ApplicationCreate, *, today: date) -> Application:
+    company = get_or_create_company(session, data.company)
+    application = Application(
+        company=company,
+        **data.model_dump(exclude={"company", "status"}),
+    )
+    change_status(application, data.status, changed_on=data.applied_on, today=today)
+    session.add(application)
+    _commit_or_raise_duplicate(session, application)
+    return application
+
+
+def _commit_or_raise_duplicate(session: Session, application: Application) -> None:
+    # The unique index is the source of truth; the lookup afterwards only finds the ID to show.
+    key = (application.company, application.title, application.applied_on)
+    try:
+        session.commit()
+    except IntegrityError as exc:
+        session.rollback()
+        if getattr(getattr(exc.orig, "diag", None), "constraint_name", None) != DUPLICATE_INDEX:
+            raise
+        company, title, applied_on = key
+        existing_id = find_duplicate(
+            session, company_id=company.id, title=title, applied_on=applied_on
+        )
+        assert existing_id is not None
+        raise DuplicateApplication(existing_id) from exc
