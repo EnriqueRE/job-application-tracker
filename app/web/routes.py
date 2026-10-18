@@ -25,6 +25,7 @@ from app.schemas import (
 from app.services import applications as service
 from app.services import contacts, interactions, links
 from app.services import settings as settings_service
+from app.services.export import HEADINGS
 from app.services.follow_up import application_last_activity, list_follow_ups
 from app.services.status import InvalidChangeDate, record_status_change
 
@@ -507,3 +508,8 @@ def follow_ups_page(request: Request, session: SessionDep, today: TodayDep) -> H
     return templates.TemplateResponse(
         request, "follow_ups.html", {"follow_ups": follow_ups, "today": today}
     )
+
+
+@router.get("/export", response_class=HTMLResponse)
+def export_page(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse(request, "export.html", {"groups": HEADINGS})

@@ -6,7 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
-from app.api import applications, contacts, follow_ups, settings
+from app.api import applications, contacts, export, follow_ups, settings
 from app.db import get_session
 from app.web import routes as web
 
@@ -29,6 +29,7 @@ def create_app() -> FastAPI:
     app.include_router(contacts.router)
     app.include_router(settings.router)
     app.include_router(follow_ups.router)
+    app.include_router(export.router)
     app.include_router(web.router)
     app.mount("/static", StaticFiles(directory=web.STATIC_DIR), name="static")
     return app
