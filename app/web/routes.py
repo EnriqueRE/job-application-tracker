@@ -10,16 +10,18 @@ from sqlalchemy.orm import Session
 
 from app.clock import get_today
 from app.db import get_session
-from app.models import Application, Status
+from app.models import Application, Contact, Status
 from app.schemas import (
     ApplicationCreate,
     ApplicationFields,
     ApplicationUpdate,
+    ContactIn,
+    ContactUpdate,
     LinkIn,
     StatusChangeIn,
 )
 from app.services import applications as service
-from app.services import links
+from app.services import contacts, links
 from app.services.status import InvalidChangeDate, record_status_change
 
 WEB_DIR = Path(__file__).resolve().parent
@@ -280,7 +282,7 @@ def add_link(
             "_links.html",
             application,
             today,
-            error=" ".join(f"{k}: {v}" for k, v in data.items()),
+            error=errors_text(data),
             link_values=fields,
         )
     links.add_link(session, application, data)
@@ -297,3 +299,93 @@ def remove_link(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Link not found")
     links.remove_link(session, application, link)
     return section(request, "_links.html", application, today)
+
+
+def contact_or_404(session: Session, application: Application, contact_id: int) -> Contact:
+    contact = contacts.get_contact(session, contact_id)
+    if contact is None or contact.company_id != application.company_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Contact not found")
+    return contact
+
+
+def errors_text(errors: dict[str, str]) -> str:
+    return " ".join(f"{field}: {message}" for field, message in errors.items())
+
+
+@router.get("/applications/{application_id}/contacts", response_class=HTMLResponse)
+def contacts_section(
+    request: Request, application_id: int, session: SessionDep, today: TodayDep
+) -> Response:
+    application = get_or_404(session, application_id)
+    return section(request, "_contacts.html", application, today)
+
+
+@router.post("/applications/{application_id}/contacts", response_class=HTMLResponse)
+def add_contact(
+    request: Request, application_id: int, fields: FormDep, session: SessionDep, today: TodayDep
+) -> Response:
+    application = get_or_404(session, application_id)
+    data = parse_form(ContactIn, fields)
+    if isinstance(data, dict):
+        return section(
+            request,
+            "_contacts.html",
+            application,
+            today,
+            error=errors_text(data),
+            contact_values=fields,
+        )
+    contacts.create_contact(session, application.company, data)
+    return section(request, "_contacts.html", application, today)
+
+
+@router.get(
+    "/applications/{application_id}/contacts/{contact_id}/edit", response_class=HTMLResponse
+)
+def edit_contact_form(
+    request: Request, application_id: int, contact_id: int, session: SessionDep, today: TodayDep
+) -> Response:
+    application = get_or_404(session, application_id)
+    contact = contact_or_404(session, application, contact_id)
+    return templates.TemplateResponse(
+        request,
+        "_contacts.html" if is_htmx(request) else "detail.html",
+        detail_context(application, today, editing_contact_id=contact.id),
+    )
+
+
+@router.post("/applications/{application_id}/contacts/{contact_id}", response_class=HTMLResponse)
+def update_contact(
+    request: Request,
+    application_id: int,
+    contact_id: int,
+    fields: FormDep,
+    session: SessionDep,
+    today: TodayDep,
+) -> Response:
+    application = get_or_404(session, application_id)
+    contact = contact_or_404(session, application, contact_id)
+    data = parse_form(ContactIn, fields)
+    if isinstance(data, dict):
+        return section(
+            request,
+            "_contacts.html",
+            application,
+            today,
+            error=errors_text(data),
+            editing_contact_id=contact.id,
+            edit_values=fields,
+        )
+    contacts.update_contact(session, contact, ContactUpdate(**data.model_dump()))
+    return section(request, "_contacts.html", application, today)
+
+
+@router.post(
+    "/applications/{application_id}/contacts/{contact_id}/delete", response_class=HTMLResponse
+)
+def delete_contact(
+    request: Request, application_id: int, contact_id: int, session: SessionDep, today: TodayDep
+) -> Response:
+    application = get_or_404(session, application_id)
+    contacts.delete_contact(session, contact_or_404(session, application, contact_id))
+    return section(request, "_contacts.html", application, today)

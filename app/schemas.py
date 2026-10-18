@@ -26,9 +26,26 @@ def _check_url(value: str) -> str:
     return value
 
 
+# Deliberately loose: catches typos without pulling in an email-validation dependency.
+Email = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, max_length=320, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$"),
+]
+
 Url = Annotated[
     str, StringConstraints(strip_whitespace=True, max_length=2000), AfterValidator(_check_url)
 ]
+
+
+def reject_nulls(model: BaseModel, *, nullable: set[str]) -> None:
+    """In a partial update, an explicit null may only clear a nullable column."""
+    nulled = [
+        name
+        for name in model.model_fields_set
+        if name not in nullable and getattr(model, name) is None
+    ]
+    if nulled:
+        raise ValueError(f"These fields can't be null: {', '.join(sorted(nulled))}")
 
 
 class ApplicationFields(BaseModel):
@@ -66,13 +83,7 @@ class ApplicationUpdate(BaseModel):
 
     @model_validator(mode="after")
     def only_job_url_can_be_cleared(self) -> "ApplicationUpdate":
-        nulled = [
-            name
-            for name in self.model_fields_set
-            if name != "job_url" and getattr(self, name) is None
-        ]
-        if nulled:
-            raise ValueError(f"These fields can't be null: {', '.join(sorted(nulled))}")
+        reject_nulls(self, nullable={"job_url"})
         return self
 
 
@@ -96,6 +107,45 @@ class LinkOut(BaseModel):
     id: int
     label: str
     url: str
+
+
+class ContactIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: Name
+    title: Short = ""
+    email: Email | None = None
+    linkedin_url: Url | None = None
+    notes: str = ""
+
+
+class ContactUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    name: Name | None = None
+    title: Short | None = None
+    email: Email | None = None
+    linkedin_url: Url | None = None
+    notes: str | None = None
+
+    @model_validator(mode="after")
+    def only_links_can_be_cleared(self) -> "ContactUpdate":
+        reject_nulls(self, nullable={"email", "linkedin_url"})
+        return self
+
+
+class ContactOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    company_id: int
+    name: str
+    title: str
+    email: str | None
+    linkedin_url: str | None
+    notes: str
+    created_at: datetime
+    updated_at: datetime
 
 
 class CompanyOut(BaseModel):

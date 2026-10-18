@@ -51,6 +51,10 @@ class Company(Base):
         DateTime(timezone=True), default=utcnow, onupdate=utcnow
     )
 
+    contacts: Mapped[list["Contact"]] = relationship(
+        order_by="(Contact.name, Contact.id)", back_populates="company"
+    )
+
 
 class Application(Base):
     __tablename__ = "applications"
@@ -113,3 +117,21 @@ class AppLink(Base):
     )
     label: Mapped[str] = mapped_column(String(100))
     url: Mapped[str] = mapped_column(String(2000))
+
+
+class Contact(Base):
+    __tablename__ = "contacts"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    company_id: Mapped[int] = mapped_column(ForeignKey("companies.id"), index=True)
+    name: Mapped[str] = mapped_column(String(200))
+    title: Mapped[str] = mapped_column(String(200), default="")
+    email: Mapped[str | None] = mapped_column(String(320))
+    linkedin_url: Mapped[str | None] = mapped_column(String(2000))
+    notes: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+    company: Mapped[Company] = relationship(back_populates="contacts")
