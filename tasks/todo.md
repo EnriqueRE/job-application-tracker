@@ -60,7 +60,8 @@ database). `/healthz` checks the database.
 **Scope:** M
 
 ### ✅ Checkpoint: Foundation
-- [ ] `make up`, `make lint`, and `make test` are all green from a clean clone
+- [x] `make up`, `make lint`, and `make test` are all green from a clean clone (verified with the
+  underlying commands; `make` isn't installed on this machine yet)
 - [ ] Review with the user before continuing
 
 ---
