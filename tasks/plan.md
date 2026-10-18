@@ -1,7 +1,8 @@
 # Implementation Plan: Job Application Tracker — Stage 1
 
 Spec: [SPEC.md](../SPEC.md) (approved 2026-10-17)
-Tasks: [tasks/todo.md](todo.md)
+Tasks: tracked as GitHub issues, one per task (issue #N = Task N), grouped into phase
+milestones, with "blocked by" links for dependencies: <https://github.com/EnriqueRE/job-application-tracker/issues>
 Status: APPROVED (2026-10-17)
 
 ## Overview
@@ -48,49 +49,78 @@ Dev: `pytest`, `pytest-cov`, `httpx2` (replaced `httpx`, which Starlette depreca
 ## Dependency Graph
 
 ```
-skeleton + compose ──► db + migrations + test harness
-                               │
-                               ▼
-                  applications (create/view, duplicates)
-                               │
-             ┌─────────────┬───┴──────────┬───────────────┐
-             ▼             ▼              ▼               ▼
-        edit/delete   status+history    links     contacts ─► interactions
-                           │                                       │
-                           ├───────────────────┬───────────────────┘
-                           ▼                   ▼
-                  settings (thresholds) ─► follow-up list
-                           │
-                           ▼
-                        export (needs history for early/late)
+#1 skeleton ─► #2 docker ─► #3 db + harness ─┬─► #16 backup + README
+                                             ▼
+                                #4 create/view API + duplicates
+                                             ▼
+                                #5 web shell + list page ─┬─► #12 search/filter
+                                             │            ├─► #13 thresholds + settings ─┐
+                                             ▼            └─────────────┐                │
+                                #6 new form + detail page               │                │
+                     ┌──────────┬────────────┼───────────┐              │                │
+                     ▼          ▼            ▼           ▼              │                │
+                #7 edit/del  #8 status   #9 links   #10 contacts        │                │
+                                │                        ▼              │                │
+                                │                   #11 interactions    │                │
+                                ├─────────► #15 export ◄────────────────┘                │
+                                └───────────────────┬────────────────────────────────────┘
+                                                    ▼
+                                    #14 follow-up list (+ #11)
 ```
 
-After Task 4, the branches that fan out (edit/delete, status, links, contacts) are independent
-and could be done in any order. The list order is the recommended one.
+After #6, the branches (#7, #8, #9, #10) are independent and can be done in any order, as are
+#12 and #13 after #5. Issue order is the recommended order.
 
-## Phases
+## Task List
 
-**Phase 1: Foundation (Tasks 1–3).** The repo builds, the containers run, migrations apply, and
-the test harness works against Postgres.
+The issues hold each task's description, acceptance criteria, verification, files, and size.
+This section is only an index.
 
-**Phase 2: The application record (Tasks 4–7).** Create, view, edit, and delete applications,
-with duplicate protection, plus status changes with back-dated history. The real application
-starts here.
+### [Phase 1: Foundation](https://github.com/EnriqueRE/job-application-tracker/milestone/1) (closed)
+- [x] [#1](https://github.com/EnriqueRE/job-application-tracker/issues/1) Python project skeleton
+- [x] [#2](https://github.com/EnriqueRE/job-application-tracker/issues/2) Docker image, Compose, and Makefile
+- [x] [#3](https://github.com/EnriqueRE/job-application-tracker/issues/3) Database session, Alembic, and test harness
 
-**Phase 3: People and context (Tasks 8–11).** Links, contacts, interactions, and list
-search/filter. After this, the interview-prep page is complete.
+Checkpoint: green from a clean clone; reviewed with the owner.
 
-**Phase 4: Follow-up and export (Tasks 12–15).** Thresholds and the settings page, the follow-up
-list, the markdown export, and backup with a persistence check and README.
+### [Phase 2: The application record](https://github.com/EnriqueRE/job-application-tracker/milestone/2)
+- [ ] [#4](https://github.com/EnriqueRE/job-application-tracker/issues/4) Create and view an application (API), with duplicate protection
+- [ ] [#5](https://github.com/EnriqueRE/job-application-tracker/issues/5) Web shell and application list page
+- [ ] [#6](https://github.com/EnriqueRE/job-application-tracker/issues/6) New-application form and detail page
+- [ ] [#7](https://github.com/EnriqueRE/job-application-tracker/issues/7) Edit and delete an application
+- [ ] [#8](https://github.com/EnriqueRE/job-application-tracker/issues/8) Status change with a chosen date, plus history (TDD)
 
-There's a checkpoint after each phase. Details and acceptance criteria are in
-[todo.md](todo.md).
+Checkpoint: spec success criteria 3 and (partly) 2 are met, so real applications can be logged.
+Review with the owner.
+
+### [Phase 3: People and context](https://github.com/EnriqueRE/job-application-tracker/milestone/3)
+- [ ] [#9](https://github.com/EnriqueRE/job-application-tracker/issues/9) Links on an application
+- [ ] [#10](https://github.com/EnriqueRE/job-application-tracker/issues/10) Company contacts
+- [ ] [#11](https://github.com/EnriqueRE/job-application-tracker/issues/11) Interactions log
+- [ ] [#12](https://github.com/EnriqueRE/job-application-tracker/issues/12) List filtering and search
+
+Checkpoint: spec success criterion 2 is fully met (interview prep on one page). Review with the
+owner.
+
+### [Phase 4: Follow-up and export](https://github.com/EnriqueRE/job-application-tracker/milestone/4)
+- [ ] [#13](https://github.com/EnriqueRE/job-application-tracker/issues/13) Follow-up thresholds and settings page
+- [ ] [#14](https://github.com/EnriqueRE/job-application-tracker/issues/14) Follow-up list and last-activity column (TDD)
+- [ ] [#15](https://github.com/EnriqueRE/job-application-tracker/issues/15) Markdown export for resume review (TDD)
+- [ ] [#16](https://github.com/EnriqueRE/job-application-tracker/issues/16) Backup, persistence check, and README
+- [ ] [#17](https://github.com/EnriqueRE/job-application-tracker/issues/17) Checkpoint: Stage 1 complete (blocked by #4–#16, plus a week of real use)
+
+### Changes from the first breakdown
+- Old Task 5 was split into #5 (shell and list) and #6 (form and detail), because it touched about
+  8 files. Everything after it shifted up by one.
+- The last-activity column moved from search/filter (#12) to the follow-up task (#14), because it
+  needs status history and the follow-up rule.
+- Settings (#13) and export (#15) now depend on the web shell (#5), since both add pages.
 
 ## Risks and Mitigations
 
 | Risk | Impact | Mitigation |
 |---|---|---|
-| The Docker Compose v2 plugin isn't installed (`docker compose` fails in this WSL environment) | High: blocks Task 2 | Prerequisite: install `docker-compose-plugin`, or enable WSL integration in Docker Desktop. Checked at the start of Task 2. |
+| ~~The Docker Compose v2 plugin isn't installed~~ | Resolved | Installed before #2. |
 | The repo sits on `/mnt/c` (Windows filesystem under WSL), so bind mounts and file watching are slow and reload may miss changes | Medium | Recommended: move the repo to the WSL filesystem (`~/projects/...`). If it stays, use polling reload and don't bind-mount `.venv`. |
 | Alembic autogenerate misses the expression index and CHECK constraints | Medium: duplicates slip through | Write those migrations by hand, and an integration test asserts a `409` on case and whitespace variants. |
 | Back-dating rules interact with history ordering | Medium | Pure `validate_change_date` covered by unit tests for every boundary, plus a DB-level ordering test. |
@@ -100,9 +130,8 @@ There's a checkpoint after each phase. Details and acceptance criteria are in
 
 ## Open Questions
 
-1. **Git:** the folder isn't a git repository yet. Should Task 1 run `git init` and commit at each
-   checkpoint? A public GitHub remote also matters for the portfolio. Should I create one, or will
-   you?
-2. **Repo location:** do you want to move the repo off `/mnt/c` into the WSL filesystem before we
-   start (recommended), or keep it where it is?
-3. **Dependencies:** do you approve the runtime and dev dependency list above?
+1. **Repo location:** the repo is still on `/mnt/c`. Move it to the WSL filesystem before Docker
+   work gets heavier (recommended), or keep it there?
+
+Resolved: git initialized and pushed to GitHub, dependencies approved (with `httpx2` in place of
+`httpx`), and tasks tracked in GitHub Issues.
