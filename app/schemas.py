@@ -12,7 +12,7 @@ from pydantic import (
     model_validator,
 )
 
-from app.models import Status
+from app.models import Channel, Status
 
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
 Title = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=300)]
@@ -148,6 +148,33 @@ class ContactOut(BaseModel):
     updated_at: datetime
 
 
+class InteractionIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    occurred_on: date | None = Field(default=None, description="Defaults to today.")
+    channel: Channel
+    contact_id: int | None = None
+    note: str = ""
+
+
+class ContactRef(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    name: str
+
+
+class InteractionOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    occurred_on: date
+    channel: Channel
+    contact: ContactRef | None
+    note: str
+    created_at: datetime
+
+
 class CompanyOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -179,6 +206,7 @@ class ApplicationOut(BaseModel):
     notes: str
     history: list[StatusChangeOut] = Field(default_factory=list)
     links: list[LinkOut] = Field(default_factory=list)
+    interactions: list[InteractionOut] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 

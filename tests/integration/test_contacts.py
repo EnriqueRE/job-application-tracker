@@ -140,3 +140,15 @@ def test_contact_of_another_company_cannot_be_edited_from_this_application(
     )
 
     assert response.status_code == 404
+
+
+def test_changing_contacts_tells_the_page_to_refresh_the_interaction_form(
+    client: TestClient,
+) -> None:
+    app_id = create_application(client)["id"]
+
+    response = client.post(
+        f"/applications/{app_id}/contacts", data={"name": "Dana"}, headers={"HX-Request": "true"}
+    )
+
+    assert response.headers["HX-Trigger"] == "contacts-changed"

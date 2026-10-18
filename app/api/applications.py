@@ -13,12 +13,14 @@ from app.schemas import (
     ApplicationOut,
     ApplicationUpdate,
     DuplicateOut,
+    InteractionIn,
+    InteractionOut,
     LinkIn,
     LinkOut,
     StatusChangeIn,
 )
 from app.services import applications as service
-from app.services import links
+from app.services import interactions, links
 from app.services.status import InvalidChangeDate, record_status_change
 
 router = APIRouter(prefix="/api/applications", tags=["applications"])
@@ -116,4 +118,32 @@ def remove_link(application_id: int, link_id: int, session: SessionDep) -> Respo
     if link is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Link not found")
     links.remove_link(session, application, link)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/{application_id}/interactions",
+    status_code=status.HTTP_201_CREATED,
+    response_model=InteractionOut,
+)
+def log_interaction(
+    application_id: int, data: InteractionIn, session: SessionDep, today: TodayDep
+) -> InteractionOut:
+    application = get_or_404(session, application_id)
+    try:
+        interaction = interactions.log_interaction(session, application, data, today=today)
+    except interactions.InvalidInteraction as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+    return InteractionOut.model_validate(interaction)
+
+
+@router.delete(
+    "/{application_id}/interactions/{interaction_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+def delete_interaction(application_id: int, interaction_id: int, session: SessionDep) -> Response:
+    application = get_or_404(session, application_id)
+    interaction = interactions.get_interaction(session, application, interaction_id)
+    if interaction is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Interaction not found")
+    interactions.delete_interaction(session, application, interaction)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

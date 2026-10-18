@@ -57,3 +57,4 @@ button.small { font-size: 0.8em; padding: 0.1rem 0.5rem; }
 .small-link { font-size: 0.85em; margin-left: 0.25rem; }
 details { margin-top: 0.75rem; }
 summary { cursor: pointer; color: var(--accent); }
+.interactions time { font-variant-numeric: tabular-nums; color: var(--muted); margin-right: 0.5rem; }

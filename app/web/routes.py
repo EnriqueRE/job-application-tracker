@@ -10,18 +10,19 @@ from sqlalchemy.orm import Session
 
 from app.clock import get_today
 from app.db import get_session
-from app.models import Application, Contact, Status
+from app.models import Application, Channel, Contact, Status
 from app.schemas import (
     ApplicationCreate,
     ApplicationFields,
     ApplicationUpdate,
     ContactIn,
     ContactUpdate,
+    InteractionIn,
     LinkIn,
     StatusChangeIn,
 )
 from app.services import applications as service
-from app.services import contacts, links
+from app.services import contacts, interactions, links
 from app.services.status import InvalidChangeDate, record_status_change
 
 WEB_DIR = Path(__file__).resolve().parent
@@ -103,7 +104,13 @@ def render_form(
 
 
 def detail_context(application: Application, today: date, **extra: Any) -> dict[str, Any]:
-    return {"application": application, "today": today, "statuses": list(Status), **extra}
+    return {
+        "application": application,
+        "today": today,
+        "statuses": list(Status),
+        "channels": list(Channel),
+        **extra,
+    }
 
 
 def section(
@@ -308,6 +315,12 @@ def contact_or_404(session: Session, application: Application, contact_id: int) 
     return contact
 
 
+def contacts_changed(response: Response) -> Response:
+    # The interactions form lists contacts too; this event makes it refresh itself.
+    response.headers["HX-Trigger"] = "contacts-changed"
+    return response
+
+
 def errors_text(errors: dict[str, str]) -> str:
     return " ".join(f"{field}: {message}" for field, message in errors.items())
 
@@ -336,7 +349,7 @@ def add_contact(
             contact_values=fields,
         )
     contacts.create_contact(session, application.company, data)
-    return section(request, "_contacts.html", application, today)
+    return contacts_changed(section(request, "_contacts.html", application, today))
 
 
 @router.get(
@@ -377,7 +390,7 @@ def update_contact(
             edit_values=fields,
         )
     contacts.update_contact(session, contact, ContactUpdate(**data.model_dump()))
-    return section(request, "_contacts.html", application, today)
+    return contacts_changed(section(request, "_contacts.html", application, today))
 
 
 @router.post(
@@ -388,4 +401,60 @@ def delete_contact(
 ) -> Response:
     application = get_or_404(session, application_id)
     contacts.delete_contact(session, contact_or_404(session, application, contact_id))
-    return section(request, "_contacts.html", application, today)
+    return contacts_changed(section(request, "_contacts.html", application, today))
+
+
+@router.get("/applications/{application_id}/interactions", response_class=HTMLResponse)
+def interactions_section(
+    request: Request, application_id: int, session: SessionDep, today: TodayDep
+) -> Response:
+    application = get_or_404(session, application_id)
+    return section(request, "_interactions.html", application, today)
+
+
+@router.post("/applications/{application_id}/interactions", response_class=HTMLResponse)
+def log_interaction(
+    request: Request, application_id: int, fields: FormDep, session: SessionDep, today: TodayDep
+) -> Response:
+    application = get_or_404(session, application_id)
+    data = parse_form(InteractionIn, fields)
+    if isinstance(data, dict):
+        return section(
+            request,
+            "_interactions.html",
+            application,
+            today,
+            error=errors_text(data),
+            interaction_values=fields,
+        )
+    try:
+        interactions.log_interaction(session, application, data, today=today)
+    except interactions.InvalidInteraction as exc:
+        return section(
+            request,
+            "_interactions.html",
+            application,
+            today,
+            error=str(exc),
+            interaction_values=fields,
+        )
+    return section(request, "_interactions.html", application, today)
+
+
+@router.post(
+    "/applications/{application_id}/interactions/{interaction_id}/delete",
+    response_class=HTMLResponse,
+)
+def delete_interaction(
+    request: Request,
+    application_id: int,
+    interaction_id: int,
+    session: SessionDep,
+    today: TodayDep,
+) -> Response:
+    application = get_or_404(session, application_id)
+    interaction = interactions.get_interaction(session, application, interaction_id)
+    if interaction is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Interaction not found")
+    interactions.delete_interaction(session, application, interaction)
+    return section(request, "_interactions.html", application, today)

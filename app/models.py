@@ -18,6 +18,15 @@ class Status(StrEnum):
     NO_RESPONSE = "no_response"
 
 
+class Channel(StrEnum):
+    EMAIL = "email"
+    LINKEDIN = "linkedin"
+    PHONE = "phone"
+    VIDEO = "video"
+    IN_PERSON = "in_person"
+    OTHER = "other"
+
+
 OPEN_STATUSES = frozenset({Status.APPLIED, Status.SCREENING, Status.INTERVIEWING})
 
 
@@ -93,6 +102,13 @@ class Application(Base):
     links: Mapped[list["AppLink"]] = relationship(
         order_by="AppLink.id", cascade="all, delete-orphan", passive_deletes=True
     )
+    interactions: Mapped[list["Interaction"]] = relationship(
+        order_by=(
+            "(Interaction.occurred_on.desc(), Interaction.created_at.desc(), Interaction.id.desc())"
+        ),
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
 
 
 class StatusChange(Base):
@@ -135,3 +151,30 @@ class Contact(Base):
     )
 
     company: Mapped[Company] = relationship(back_populates="contacts")
+
+
+class Interaction(Base):
+    __tablename__ = "interactions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    application_id: Mapped[int] = mapped_column(
+        ForeignKey("applications.id", ondelete="CASCADE"), index=True
+    )
+    contact_id: Mapped[int | None] = mapped_column(
+        ForeignKey("contacts.id", ondelete="SET NULL"), index=True
+    )
+    occurred_on: Mapped[date] = mapped_column(Date)
+    channel: Mapped[Channel] = mapped_column(
+        Enum(
+            Channel,
+            name="interaction_channel",
+            native_enum=False,
+            create_constraint=True,
+            length=20,
+            values_callable=lambda channels: [c.value for c in channels],
+        )
+    )
+    note: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+    contact: Mapped[Contact | None] = relationship()

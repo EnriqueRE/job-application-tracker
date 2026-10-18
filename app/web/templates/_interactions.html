@@ -1,0 +1,42 @@
+{% set base = "/applications/" ~ application.id ~ "/interactions" %}
+{% set values = interaction_values or {} %}
+<h2>Interactions</h2>
+<form class="inline-form" method="post" action="{{ base }}" hx-post="{{ base }}" hx-target="#interactions">
+  <label>Date <input type="date" name="occurred_on" value="{{ values.get('occurred_on') or today.isoformat() }}" max="{{ today.isoformat() }}"></label>
+  <label>Channel
+    <select name="channel">
+      {% for channel in channels %}
+      <option value="{{ channel.value }}" {% if values.get('channel') == channel.value %}selected{% endif %}>{{ channel.value | replace("_", " ") }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>With
+    <select name="contact_id">
+      <option value="">(no contact)</option>
+      {% for contact in application.company.contacts %}
+      <option value="{{ contact.id }}" {% if values.get('contact_id') == contact.id | string %}selected{% endif %}>{{ contact.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label class="wide">Note <textarea name="note" rows="2">{{ values.get('note') or '' }}</textarea></label>
+  <button type="submit">Log interaction</button>
+</form>
+{% if interactions_error %}<p class="error" role="alert">{{ interactions_error }}</p>{% endif %}
+{% if application.interactions %}
+<ol class="plain-list interactions">
+  {% for interaction in application.interactions %}
+  <li>
+    <time datetime="{{ interaction.occurred_on.isoformat() }}">{{ interaction.occurred_on.isoformat() }}</time>
+    <strong>{{ interaction.channel.value | replace("_", " ") }}</strong>{% if interaction.contact %} with {{ interaction.contact.name }}{% endif %}
+    <form class="inline" method="post" action="{{ base }}/{{ interaction.id }}/delete"
+          hx-post="{{ base }}/{{ interaction.id }}/delete" hx-target="#interactions"
+          hx-confirm="Delete this interaction?">
+      <button type="submit" class="secondary small">Delete</button>
+    </form>
+    {% if interaction.note %}<div class="preserve">{{ interaction.note }}</div>{% endif %}
+  </li>
+  {% endfor %}
+</ol>
+{% else %}
+<p class="muted">No interactions logged yet.</p>
+{% endif %}

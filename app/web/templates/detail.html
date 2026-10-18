@@ -29,6 +29,11 @@
   {% include "_contacts.html" %}
 </section>
 
+<section id="interactions" hx-get="/applications/{{ application.id }}/interactions"
+         hx-trigger="contacts-changed from:body">
+  {% include "_interactions.html" %}
+</section>
+
 <section id="links">
   {% include "_links.html" %}
 </section>
