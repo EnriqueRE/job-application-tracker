@@ -199,3 +199,15 @@ def test_delete_via_htmx_redirects_with_a_header(client: TestClient) -> None:
     response = client.post(f"/applications/{created['id']}/delete", headers={"HX-Request": "true"})
 
     assert response.headers["HX-Redirect"] == "/"
+
+
+def test_api_docs_load_no_external_assets(client: TestClient) -> None:
+    page = client.get("/docs").text
+
+    assert not re.search(r"""(src|href)=["']?(https?:)?//""", page)
+    assert client.get("/static/swagger/swagger-ui-bundle.js").status_code == 200
+    assert client.get("/static/swagger/swagger-ui.css").status_code == 200
+
+
+def test_redoc_is_disabled_since_it_needs_a_cdn(client: TestClient) -> None:
+    assert client.get("/redoc").status_code == 404
