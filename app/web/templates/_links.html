@@ -1,0 +1,24 @@
+<h2>Links</h2>
+{% if application.links %}
+<ul class="plain-list">
+  {% for link in application.links %}
+  <li>
+    <a href="{{ link.url }}" rel="noreferrer">{{ link.label }}</a>
+    <span class="muted">{{ link.url }}</span>
+    <form class="inline" method="post" action="/applications/{{ application.id }}/links/{{ link.id }}/delete"
+          hx-post="/applications/{{ application.id }}/links/{{ link.id }}/delete" hx-target="#links">
+      <button type="submit" class="secondary small" aria-label="Remove link {{ link.label }}">Remove</button>
+    </form>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">No links yet.</p>
+{% endif %}
+<form class="inline-form" method="post" action="/applications/{{ application.id }}/links"
+      hx-post="/applications/{{ application.id }}/links" hx-target="#links">
+  <label>Label <input name="label" required maxlength="100" value="{{ (link_values or {}).get('label', '') }}"></label>
+  <label>URL <input name="url" type="url" required value="{{ (link_values or {}).get('url', '') }}"></label>
+  <button type="submit">Add link</button>
+</form>
+{% if links_error %}<p class="error" role="alert">{{ links_error }}</p>{% endif %}

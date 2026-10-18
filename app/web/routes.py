@@ -11,8 +11,15 @@ from sqlalchemy.orm import Session
 from app.clock import get_today
 from app.db import get_session
 from app.models import Application, Status
-from app.schemas import ApplicationCreate, ApplicationFields, ApplicationUpdate, StatusChangeIn
+from app.schemas import (
+    ApplicationCreate,
+    ApplicationFields,
+    ApplicationUpdate,
+    LinkIn,
+    StatusChangeIn,
+)
 from app.services import applications as service
+from app.services import links
 from app.services.status import InvalidChangeDate, record_status_change
 
 WEB_DIR = Path(__file__).resolve().parent
@@ -93,6 +100,36 @@ def render_form(
     return templates.TemplateResponse(request, "form.html", context, status_code=status_code)
 
 
+def detail_context(application: Application, today: date, **extra: Any) -> dict[str, Any]:
+    return {"application": application, "today": today, "statuses": list(Status), **extra}
+
+
+def section(
+    request: Request,
+    template: str,
+    application: Application,
+    today: date,
+    *,
+    error: str | None = None,
+    **extra: Any,
+) -> Response:
+    """Render one detail-page section for htmx, or go back to the page for a plain form post."""
+    if not is_htmx(request):
+        if error is None:
+            return redirect(request, f"/applications/{application.id}")
+        template = "detail.html"
+    return templates.TemplateResponse(
+        request,
+        template,
+        detail_context(application, today, **extra, **{f"{template_key(template)}_error": error}),
+        status_code=status.HTTP_200_OK if error is None else status.HTTP_422_UNPROCESSABLE_CONTENT,
+    )
+
+
+def template_key(template: str) -> str:
+    return template.removeprefix("_").removesuffix(".html")
+
+
 @router.get("/", response_class=HTMLResponse)
 def list_page(request: Request, session: SessionDep) -> HTMLResponse:
     applications = service.list_applications(session)
@@ -132,10 +169,6 @@ def create_application(
     return redirect(request, f"/applications/{application.id}")
 
 
-def detail_context(application: Application, today: date, **extra: Any) -> dict[str, Any]:
-    return {"application": application, "today": today, "statuses": list(Status), **extra}
-
-
 @router.get("/applications/{application_id}", response_class=HTMLResponse)
 def detail_page(
     request: Request, application_id: int, session: SessionDep, today: TodayDep
@@ -164,15 +197,7 @@ def change_status(
             )
         except InvalidChangeDate as exc:
             error = str(exc)
-    if error is None and not is_htmx(request):
-        return redirect(request, f"/applications/{application_id}")
-    template = "_status.html" if is_htmx(request) else "detail.html"
-    return templates.TemplateResponse(
-        request,
-        template,
-        detail_context(application, today, status_error=error, attempted=fields),
-        status_code=status.HTTP_200_OK if error is None else status.HTTP_422_UNPROCESSABLE_CONTENT,
-    )
+    return section(request, "_status.html", application, today, error=error, attempted=fields)
 
 
 def form_values(application: Application) -> dict[str, Any]:
@@ -241,3 +266,34 @@ def update_application(
 def delete_application(request: Request, application_id: int, session: SessionDep) -> Response:
     service.delete_application(session, get_or_404(session, application_id))
     return redirect(request, "/")
+
+
+@router.post("/applications/{application_id}/links", response_class=HTMLResponse)
+def add_link(
+    request: Request, application_id: int, fields: FormDep, session: SessionDep, today: TodayDep
+) -> Response:
+    application = get_or_404(session, application_id)
+    data = parse_form(LinkIn, fields)
+    if isinstance(data, dict):
+        return section(
+            request,
+            "_links.html",
+            application,
+            today,
+            error=" ".join(f"{k}: {v}" for k, v in data.items()),
+            link_values=fields,
+        )
+    links.add_link(session, application, data)
+    return section(request, "_links.html", application, today)
+
+
+@router.post("/applications/{application_id}/links/{link_id}/delete", response_class=HTMLResponse)
+def remove_link(
+    request: Request, application_id: int, link_id: int, session: SessionDep, today: TodayDep
+) -> Response:
+    application = get_or_404(session, application_id)
+    link = links.get_link(session, application, link_id)
+    if link is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Link not found")
+    links.remove_link(session, application, link)
+    return section(request, "_links.html", application, today)

@@ -86,6 +86,9 @@ class Application(Base):
         cascade="all, delete-orphan",
         passive_deletes=True,
     )
+    links: Mapped[list["AppLink"]] = relationship(
+        order_by="AppLink.id", cascade="all, delete-orphan", passive_deletes=True
+    )
 
 
 class StatusChange(Base):
@@ -99,3 +102,14 @@ class StatusChange(Base):
     to_status: Mapped[Status] = mapped_column(status_enum("status_change_to"))
     changed_on: Mapped[date] = mapped_column(Date)
     recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class AppLink(Base):
+    __tablename__ = "app_links"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    application_id: Mapped[int] = mapped_column(
+        ForeignKey("applications.id", ondelete="CASCADE"), index=True
+    )
+    label: Mapped[str] = mapped_column(String(100))
+    url: Mapped[str] = mapped_column(String(2000))

@@ -13,9 +13,12 @@ from app.schemas import (
     ApplicationOut,
     ApplicationUpdate,
     DuplicateOut,
+    LinkIn,
+    LinkOut,
     StatusChangeIn,
 )
 from app.services import applications as service
+from app.services import links
 from app.services.status import InvalidChangeDate, record_status_change
 
 router = APIRouter(prefix="/api/applications", tags=["applications"])
@@ -98,3 +101,19 @@ def change_status(
     except InvalidChangeDate as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
     return ApplicationOut.model_validate(application)
+
+
+@router.post("/{application_id}/links", status_code=status.HTTP_201_CREATED, response_model=LinkOut)
+def add_link(application_id: int, data: LinkIn, session: SessionDep) -> LinkOut:
+    link = links.add_link(session, get_or_404(session, application_id), data)
+    return LinkOut.model_validate(link)
+
+
+@router.delete("/{application_id}/links/{link_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_link(application_id: int, link_id: int, session: SessionDep) -> Response:
+    application = get_or_404(session, application_id)
+    link = links.get_link(session, application, link_id)
+    if link is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Link not found")
+    links.remove_link(session, application, link)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

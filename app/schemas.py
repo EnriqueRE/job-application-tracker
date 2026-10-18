@@ -83,6 +83,21 @@ class StatusChangeIn(BaseModel):
     changed_on: date | None = Field(default=None, description="Defaults to today.")
 
 
+class LinkIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    label: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=100)]
+    url: Url
+
+
+class LinkOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    label: str
+    url: str
+
+
 class CompanyOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -113,6 +128,7 @@ class ApplicationOut(BaseModel):
     status: Status
     notes: str
     history: list[StatusChangeOut] = Field(default_factory=list)
+    links: list[LinkOut] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 
