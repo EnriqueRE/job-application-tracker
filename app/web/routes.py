@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from app.clock import get_today
 from app.db import get_session
 from app.models import Application
-from app.schemas import ApplicationCreate
+from app.schemas import ApplicationCreate, ApplicationFields, ApplicationUpdate
 from app.services import applications as service
 from app.services.status import InvalidChangeDate
 
@@ -36,8 +36,11 @@ FormDep = Annotated[dict[str, str], Depends(form_fields)]
 
 def parse_form[M: BaseModel](model: type[M], fields: dict[str, str]) -> M | dict[str, str]:
     """Validate a form, returning the model or field name -> error message."""
-    # Browsers send empty strings for untouched inputs; treat them as "not given".
-    cleaned = {key: value for key, value in fields.items() if value.strip() != ""}
+    # Browsers send "" for empty inputs; that means None for nullable fields like job_url.
+    cleaned: dict[str, str | None] = {
+        key: None if value.strip() == "" and _defaults_to_none(model, key) else value
+        for key, value in fields.items()
+    }
     try:
         return model.model_validate(cleaned)
     except ValidationError as exc:
@@ -46,6 +49,21 @@ def parse_form[M: BaseModel](model: type[M], fields: dict[str, str]) -> M | dict
             field = str(error["loc"][0]) if error["loc"] else "form"
             errors.setdefault(field, error["msg"].removeprefix("Value error, "))
         return errors
+
+
+def _defaults_to_none(model: type[BaseModel], name: str) -> bool:
+    info = model.model_fields.get(name)
+    return info is not None and not info.is_required() and info.default is None
+
+
+def is_htmx(request: Request) -> bool:
+    return request.headers.get("HX-Request") == "true"
+
+
+def redirect(request: Request, url: str) -> Response:
+    if is_htmx(request):
+        return Response(headers={"HX-Redirect": url})
+    return RedirectResponse(url, status.HTTP_303_SEE_OTHER)
 
 
 def get_or_404(session: Session, application_id: int) -> Application:
@@ -111,10 +129,78 @@ def create_application(
         )
     except service.DuplicateApplication as exc:
         return again(duplicate_id=exc.existing_id, status_code=status.HTTP_409_CONFLICT)
-    return RedirectResponse(f"/applications/{application.id}", status.HTTP_303_SEE_OTHER)
+    return redirect(request, f"/applications/{application.id}")
 
 
 @router.get("/applications/{application_id}", response_class=HTMLResponse)
 def detail_page(request: Request, application_id: int, session: SessionDep) -> HTMLResponse:
     application = get_or_404(session, application_id)
     return templates.TemplateResponse(request, "detail.html", {"application": application})
+
+
+def form_values(application: Application) -> dict[str, Any]:
+    return {
+        "company": application.company.name,
+        "title": application.title,
+        "job_url": application.job_url,
+        "job_description": application.job_description,
+        "location": application.location,
+        "source": application.source,
+        "applied_on": application.applied_on.isoformat(),
+        "notes": application.notes,
+    }
+
+
+@router.get("/applications/{application_id}/edit", response_class=HTMLResponse)
+def edit_application_page(
+    request: Request, application_id: int, session: SessionDep
+) -> HTMLResponse:
+    application = get_or_404(session, application_id)
+    return render_form(
+        request,
+        values=form_values(application),
+        action=f"/applications/{application.id}",
+        heading=f"Edit {application.title}",
+    )
+
+
+@router.post("/applications/{application_id}", response_class=HTMLResponse)
+def update_application(
+    request: Request,
+    application_id: int,
+    fields: FormDep,
+    session: SessionDep,
+    today: TodayDep,
+) -> Response:
+    application = get_or_404(session, application_id)
+    heading = f"Edit {application.title}"
+
+    def again(**kwargs: Any) -> HTMLResponse:
+        return render_form(
+            request,
+            values=fields,
+            action=f"/applications/{application_id}",
+            heading=heading,
+            **kwargs,
+        )
+
+    data = parse_form(ApplicationFields, fields)
+    if isinstance(data, dict):
+        return again(errors=data, status_code=status.HTTP_422_UNPROCESSABLE_CONTENT)
+    try:
+        service.update_application(
+            session, application, ApplicationUpdate(**data.model_dump()), today=today
+        )
+    except InvalidChangeDate as exc:
+        return again(
+            errors={"applied_on": str(exc)}, status_code=status.HTTP_422_UNPROCESSABLE_CONTENT
+        )
+    except service.DuplicateApplication as exc:
+        return again(duplicate_id=exc.existing_id, status_code=status.HTTP_409_CONFLICT)
+    return redirect(request, f"/applications/{application_id}")
+
+
+@router.post("/applications/{application_id}/delete")
+def delete_application(request: Request, application_id: int, session: SessionDep) -> Response:
+    service.delete_application(session, get_or_404(session, application_id))
+    return redirect(request, "/")

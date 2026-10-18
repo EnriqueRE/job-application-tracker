@@ -1,13 +1,14 @@
 from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.clock import get_today
 from app.db import get_session
-from app.schemas import ApplicationCreate, ApplicationOut, DuplicateOut
+from app.models import Application
+from app.schemas import ApplicationCreate, ApplicationOut, ApplicationUpdate, DuplicateOut
 from app.services import applications as service
 from app.services.status import InvalidChangeDate
 
@@ -45,9 +46,35 @@ def create_application(
     return ApplicationOut.model_validate(application)
 
 
-@router.get("/{application_id}", response_model=ApplicationOut)
-def get_application(application_id: int, session: SessionDep) -> ApplicationOut:
+def get_or_404(session: Session, application_id: int) -> Application:
     application = service.get_application(session, application_id)
     if application is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Application not found")
+    return application
+
+
+@router.get("/{application_id}", response_model=ApplicationOut)
+def get_application(application_id: int, session: SessionDep) -> ApplicationOut:
+    return ApplicationOut.model_validate(get_or_404(session, application_id))
+
+
+@router.patch(
+    "/{application_id}", response_model=ApplicationOut, responses={409: {"model": DuplicateOut}}
+)
+def update_application(
+    application_id: int, data: ApplicationUpdate, session: SessionDep, today: TodayDep
+) -> ApplicationOut | JSONResponse:
+    application = get_or_404(session, application_id)
+    try:
+        service.update_application(session, application, data, today=today)
+    except service.DuplicateApplication as exc:
+        return duplicate_response(exc)
+    except InvalidChangeDate as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
     return ApplicationOut.model_validate(application)
+
+
+@router.delete("/{application_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_application(application_id: int, session: SessionDep) -> Response:
+    service.delete_application(session, get_or_404(session, application_id))
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

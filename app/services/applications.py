@@ -5,8 +5,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.models import Application, Company
-from app.schemas import ApplicationCreate
-from app.services.status import change_status
+from app.schemas import ApplicationCreate, ApplicationUpdate
+from app.services.status import InvalidChangeDate, change_status
 
 DUPLICATE_INDEX = "uq_applications_company_title_applied_on"
 
@@ -58,9 +58,41 @@ def create_application(session: Session, data: ApplicationCreate, *, today: date
     return application
 
 
+def update_application(
+    session: Session, application: Application, data: ApplicationUpdate, *, today: date
+) -> Application:
+    changes = data.model_dump(exclude_unset=True)
+    if "company" in changes:
+        application.company = get_or_create_company(session, changes.pop("company"))
+    if "applied_on" in changes:
+        check_applied_on(application, changes["applied_on"], today=today)
+    for name, value in changes.items():
+        setattr(application, name, value)
+    _commit_or_raise_duplicate(session, application)
+    return application
+
+
+def check_applied_on(application: Application, applied_on: date, *, today: date) -> None:
+    # History rows are never rewritten, so the applied date can't move past a later change.
+    if applied_on > today:
+        raise InvalidChangeDate("The applied date can't be in the future.")
+    later_changes = application.history[1:]
+    if later_changes and applied_on > later_changes[0].changed_on:
+        raise InvalidChangeDate(
+            "The applied date can't be after the first status change "
+            f"({later_changes[0].changed_on.isoformat()})."
+        )
+
+
+def delete_application(session: Session, application: Application) -> None:
+    session.delete(application)
+    session.commit()
+
+
 def _commit_or_raise_duplicate(session: Session, application: Application) -> None:
     # The unique index is the source of truth; the lookup afterwards only finds the ID to show.
-    key = (application.company, application.title, application.applied_on)
+    with session.no_autoflush:  # loading the company must not flush (and fail) early
+        key = (application.company, application.title, application.applied_on)
     try:
         session.commit()
     except IntegrityError as exc:

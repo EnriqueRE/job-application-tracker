@@ -3,6 +3,14 @@
 {% block content %}
 <h1>{{ application.title }}</h1>
 <p class="subtitle">{{ application.company.name }}</p>
+<div class="actions">
+  <a class="button" href="/applications/{{ application.id }}/edit">Edit</a>
+  <form method="post" action="/applications/{{ application.id }}/delete"
+        hx-post="/applications/{{ application.id }}/delete"
+        hx-confirm="Delete this application and its history? This can't be undone.">
+    <button type="submit" class="danger">Delete</button>
+  </form>
+</div>
 
 <section id="status">
   {% include "_status.html" %}

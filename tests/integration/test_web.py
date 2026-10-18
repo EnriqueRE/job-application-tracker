@@ -146,3 +146,56 @@ def test_blank_optional_url_is_accepted(client: TestClient) -> None:
     response = client.post("/applications", data=form(job_url=""), follow_redirects=False)
 
     assert response.status_code == 303
+
+
+def test_edit_form_is_prefilled(client: TestClient) -> None:
+    created = create(client, notes="Original note")
+
+    page = client.get(f"/applications/{created['id']}/edit").text
+
+    assert 'value="Platform Engineer"' in page
+    assert "Original note" in page
+
+
+def test_submitting_the_edit_form_saves_and_redirects(client: TestClient) -> None:
+    created = create(client)
+
+    response = client.post(
+        f"/applications/{created['id']}",
+        data=form(title="Staff Engineer", notes=""),
+        follow_redirects=False,
+    )
+
+    assert response.status_code == 303
+    assert response.headers["location"] == f"/applications/{created['id']}"
+    updated = client.get(f"/api/applications/{created['id']}").json()
+    assert updated["title"] == "Staff Engineer"
+    assert updated["notes"] == ""
+
+
+def test_editing_into_a_duplicate_shows_an_inline_message(client: TestClient) -> None:
+    existing = create(client, title="SRE")
+    other = create(client, title="Platform")
+
+    response = client.post(f"/applications/{other['id']}", data=form(title="sre"))
+
+    assert response.status_code == 409
+    assert f'href="/applications/{existing["id"]}"' in response.text
+
+
+def test_delete_button_removes_the_application(client: TestClient) -> None:
+    created = create(client)
+
+    response = client.post(f"/applications/{created['id']}/delete", follow_redirects=False)
+
+    assert response.status_code == 303
+    assert response.headers["location"] == "/"
+    assert client.get(f"/api/applications/{created['id']}").status_code == 404
+
+
+def test_delete_via_htmx_redirects_with_a_header(client: TestClient) -> None:
+    created = create(client)
+
+    response = client.post(f"/applications/{created['id']}/delete", headers={"HX-Request": "true"})
+
+    assert response.headers["HX-Redirect"] == "/"

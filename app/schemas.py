@@ -9,6 +9,7 @@ from pydantic import (
     HttpUrl,
     StringConstraints,
     TypeAdapter,
+    model_validator,
 )
 
 from app.models import Status
@@ -30,7 +31,9 @@ Url = Annotated[
 ]
 
 
-class ApplicationCreate(BaseModel):
+class ApplicationFields(BaseModel):
+    """Every editable field of an application; status changes go through the status service."""
+
     model_config = ConfigDict(extra="forbid")
 
     company: Name
@@ -40,8 +43,37 @@ class ApplicationCreate(BaseModel):
     location: Short = ""
     source: Short = ""
     applied_on: date
-    status: Status = Status.APPLIED
     notes: str = ""
+
+
+class ApplicationCreate(ApplicationFields):
+    status: Status = Status.APPLIED
+
+
+class ApplicationUpdate(BaseModel):
+    """Partial update: only the fields sent are changed."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    company: Name | None = None
+    title: Title | None = None
+    job_url: Url | None = None
+    job_description: str | None = None
+    location: Short | None = None
+    source: Short | None = None
+    applied_on: date | None = None
+    notes: str | None = None
+
+    @model_validator(mode="after")
+    def only_job_url_can_be_cleared(self) -> "ApplicationUpdate":
+        nulled = [
+            name
+            for name in self.model_fields_set
+            if name != "job_url" and getattr(self, name) is None
+        ]
+        if nulled:
+            raise ValueError(f"These fields can't be null: {', '.join(sorted(nulled))}")
+        return self
 
 
 class CompanyOut(BaseModel):
