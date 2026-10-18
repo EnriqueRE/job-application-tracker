@@ -14,9 +14,9 @@ Standard verification for every task (in addition to the task's own checks):
 loaded from env, and the ruff, mypy, and pytest configs. No database yet.
 
 **Acceptance criteria:**
-- [ ] `uv run uvicorn app.main:app` serves `GET /healthz` → `{"status": "ok"}`
-- [ ] `requires-python` is pinned to 3.12, and the dependencies match the approved list in the plan
-- [ ] `.gitignore` covers `.env`, `.venv`, `__pycache__`, `*.sql` backups
+- [x] `uv run uvicorn app.main:app` serves `GET /healthz` → `{"status": "ok"}`
+- [x] `requires-python` is pinned to 3.12, and the dependencies match the approved list in the plan
+- [x] `.gitignore` covers `.env`, `.venv`, `__pycache__`, `*.sql` backups
 
 **Verification:** `uv run pytest -q` (one healthz test) · `uv run ruff check . && uv run mypy app`
 
