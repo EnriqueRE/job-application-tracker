@@ -22,6 +22,11 @@ def duplicate_response(exc: service.DuplicateApplication) -> JSONResponse:
     return JSONResponse(body.model_dump(), status_code=status.HTTP_409_CONFLICT)
 
 
+@router.get("", response_model=list[ApplicationOut])
+def list_applications(session: SessionDep) -> list[ApplicationOut]:
+    return [ApplicationOut.model_validate(a) for a in service.list_applications(session)]
+
+
 @router.post(
     "",
     status_code=status.HTTP_201_CREATED,

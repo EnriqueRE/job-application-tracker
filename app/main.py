@@ -1,12 +1,14 @@
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, Response, status
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.api import applications
 from app.db import get_session
+from app.web import routes as web
 
 
 def create_app() -> FastAPI:
@@ -24,6 +26,8 @@ def create_app() -> FastAPI:
         return {"status": "ok"}
 
     app.include_router(applications.router)
+    app.include_router(web.router)
+    app.mount("/static", StaticFiles(directory=web.STATIC_DIR), name="static")
     return app
 
 

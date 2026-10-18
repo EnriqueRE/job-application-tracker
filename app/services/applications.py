@@ -37,6 +37,11 @@ def find_duplicate(
     )
 
 
+def list_applications(session: Session) -> list[Application]:
+    query = select(Application).order_by(Application.applied_on.desc(), Application.id.desc())
+    return list(session.scalars(query))
+
+
 def get_application(session: Session, application_id: int) -> Application | None:
     return session.get(Application, application_id)
 

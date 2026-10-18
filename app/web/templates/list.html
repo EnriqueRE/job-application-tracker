@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Applications</h1>
+{% if applications %}
+<table>
+  <thead>
+    <tr><th>Company</th><th>Title</th><th>Status</th><th>Applied</th></tr>
+  </thead>
+  <tbody>
+    {% for application in applications %}
+    <tr>
+      <td>{{ application.company.name }}</td>
+      <td>{{ application.title }}</td>
+      <td><span class="status status-{{ application.status.value }}">{{ application.status.value }}</span></td>
+      <td>{{ application.applied_on.isoformat() }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">No applications yet.</p>
+{% endif %}
+{% endblock %}

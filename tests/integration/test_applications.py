@@ -106,3 +106,13 @@ def test_applied_date_in_the_future_is_422(client: TestClient) -> None:
     response = client.post("/api/applications", json=make_payload(applied_on=tomorrow))
 
     assert response.status_code == 422
+
+
+def test_list_returns_applications_newest_applied_first(client: TestClient) -> None:
+    client.post("/api/applications", json=make_payload(title="Older", applied_on="2026-09-01"))
+    client.post("/api/applications", json=make_payload(title="Newer", applied_on="2026-09-20"))
+
+    response = client.get("/api/applications")
+
+    assert response.status_code == 200
+    assert [a["title"] for a in response.json()] == ["Newer", "Older"]

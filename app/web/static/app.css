@@ -1,0 +1,26 @@
+/* Deliberately plain: readable defaults, nothing more. */
+:root {
+  --fg: #1d1d1f;
+  --muted: #6b6b70;
+  --line: #d9d9de;
+  --bg: #ffffff;
+  --accent: #2456c7;
+  --error: #b42318;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--fg);
+  background: var(--bg);
+}
+
+body { margin: 0; line-height: 1.5; }
+header { border-bottom: 1px solid var(--line); padding: 0.75rem 1rem; }
+nav { display: flex; gap: 1.25rem; align-items: baseline; flex-wrap: wrap; }
+main { max-width: 60rem; margin: 0 auto; padding: 1rem; }
+a { color: var(--accent); }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 0.4rem 0.5rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; color: var(--muted); }
+
+.status { font-size: 0.85em; padding: 0.1rem 0.45rem; border: 1px solid var(--line); border-radius: 999px; white-space: nowrap; }
+.empty, .muted { color: var(--muted); }
+.error { color: var(--error); }
