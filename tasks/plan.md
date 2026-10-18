@@ -121,7 +121,7 @@ owner.
 | Risk | Impact | Mitigation |
 |---|---|---|
 | ~~The Docker Compose v2 plugin isn't installed~~ | Resolved | Installed before #2. |
-| The repo sits on `/mnt/c` (Windows filesystem under WSL), so bind mounts and file watching are slow and reload may miss changes | Medium | Recommended: move the repo to the WSL filesystem (`~/projects/...`). If it stays, use polling reload and don't bind-mount `.venv`. |
+| ~~The repo sits on `/mnt/c` (Windows filesystem under WSL)~~ | Resolved | Moved to `~/projects/job-application-tracker` on the WSL filesystem (2026-10-17). |
 | Alembic autogenerate misses the expression index and CHECK constraints | Medium: duplicates slip through | Write those migrations by hand, and an integration test asserts a `409` on case and whitespace variants. |
 | Back-dating rules interact with history ordering | Medium | Pure `validate_change_date` covered by unit tests for every boundary, plus a DB-level ordering test. |
 | Test isolation leaks into real data | High | A separate `tracker_test` DB and a guard in conftest that refuses to run unless the database name ends in `_test`. |
@@ -130,8 +130,7 @@ owner.
 
 ## Open Questions
 
-1. **Repo location:** the repo is still on `/mnt/c`. Move it to the WSL filesystem before Docker
-   work gets heavier (recommended), or keep it there?
+None.
 
 Resolved: git initialized and pushed to GitHub, dependencies approved (with `httpx2` in place of
-`httpx`), and tasks tracked in GitHub Issues.
+`httpx`), tasks tracked in GitHub Issues, and the repo moved to the WSL filesystem.
