@@ -19,9 +19,9 @@ dependencies = [
 dev = [
     "pytest",
     "pytest-cov",
-    "httpx",
     "ruff",
     "mypy",
+    "httpx2",
 ]
 
 [tool.uv]

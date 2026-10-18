@@ -43,7 +43,7 @@ start logging real applications after Phase 2.
 
 `fastapi`, `uvicorn[standard]`, `sqlalchemy>=2`, `psycopg[binary]` (v3 driver), `alembic`,
 `pydantic-settings`, `jinja2`, `python-multipart` (needed for HTML form posts).
-Dev: `pytest`, `pytest-cov`, `httpx`, `ruff`, `mypy`.
+Dev: `pytest`, `pytest-cov`, `httpx2` (replaced `httpx`, which Starlette deprecated for TestClient), `ruff`, `mypy`.
 
 ## Dependency Graph
 

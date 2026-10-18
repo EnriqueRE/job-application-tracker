@@ -150,7 +150,7 @@ early rejections only). Empty groups are left out.
   CDN, so the app works offline.
 - **Database:** PostgreSQL 16, SQLAlchemy 2.x (ORM, typed), and Alembic migrations
 - **Validation:** Pydantic v2
-- **Tests:** pytest and httpx, running against a real Postgres from Compose (no SQLite stand-in)
+- **Tests:** pytest and httpx2 (FastAPI TestClient), running against a real Postgres from Compose (no SQLite stand-in)
 - **Lint and format:** ruff (lint and format) and mypy (strict on `app/`)
 - **Runtime:** a Docker multi-stage image (non-root) and Docker Compose (`app` and `db`, with a
   named volume for data)
@@ -184,7 +184,7 @@ app/
 migrations/          → Alembic
 tests/
   unit/              → pure logic (follow-up rule, early/late rejection, export rendering)
-  integration/       → API + DB through httpx against Postgres
+  integration/       → API + DB through the TestClient against Postgres
 docs/intent/         → confirmed intent docs
 Dockerfile
 compose.yaml
