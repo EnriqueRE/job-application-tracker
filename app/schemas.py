@@ -175,6 +175,19 @@ class InteractionOut(BaseModel):
     created_at: datetime
 
 
+Days = Annotated[int, Field(ge=1, le=365)]
+
+
+class FollowUpSettings(BaseModel):
+    """Days without activity before an open application needs a follow-up."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    applied: Days
+    screening: Days
+    interviewing: Days
+
+
 class CompanyOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

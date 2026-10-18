@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field %}
+{% block title %}Settings · Job tracker{% endblock %}
+{% block content %}
+<h1>Settings</h1>
+<h2>Follow-up thresholds</h2>
+<p class="muted">An open application shows on the follow-up list when it has had no activity
+for more than this many days in its current status (1–365).</p>
+{% if saved %}<p class="notice" role="status">Saved. The follow-up list uses the new values now.</p>{% endif %}
+<form method="post" action="/settings" class="stack narrow">
+  {{ field("applied", "Applied", values, errors, type="number", required=true) }}
+  {{ field("screening", "Screening", values, errors, type="number", required=true) }}
+  {{ field("interviewing", "Interviewing", values, errors, type="number", required=true) }}
+  <div><button type="submit">Save</button></div>
+</form>
+{% endblock %}

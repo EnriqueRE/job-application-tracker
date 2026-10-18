@@ -63,3 +63,5 @@ summary { cursor: pointer; color: var(--accent); }
 .filters fieldset { border: 1px solid var(--line); border-radius: 4px; display: flex; flex-wrap: wrap; gap: 0.25rem 0.75rem; padding: 0.25rem 0.75rem 0.5rem; }
 .filters legend { font-size: 0.9em; color: var(--muted); }
 .check { white-space: nowrap; }
+.narrow { max-width: 14rem; }
+.notice { padding: 0.5rem 0.75rem; border-left: 3px solid var(--accent); background: #f2f5fc; }

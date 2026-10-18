@@ -1,7 +1,18 @@
 from datetime import UTC, date, datetime
 from enum import StrEnum
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, Index, String, Text, text
+from sqlalchemy import (
+    CheckConstraint,
+    Date,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -178,3 +189,28 @@ class Interaction(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     contact: Mapped[Contact | None] = relationship()
+
+
+class FollowUpThreshold(Base):
+    __tablename__ = "follow_up_thresholds"
+    __table_args__ = (
+        CheckConstraint("days BETWEEN 1 AND 365", name="ck_follow_up_thresholds_days"),
+        CheckConstraint(
+            "status IN ('applied', 'screening', 'interviewing')",
+            name="ck_follow_up_thresholds_open_status",
+        ),
+    )
+
+    status: Mapped[Status] = mapped_column(
+        Enum(
+            Status,
+            native_enum=False,
+            length=20,
+            values_callable=lambda statuses: [s.value for s in statuses],
+        ),
+        primary_key=True,
+    )
+    days: Mapped[int] = mapped_column(Integer)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )

@@ -6,6 +6,7 @@
     {% if errors.get(name) %}aria-invalid="true" aria-describedby="{{ name }}-error"{% endif %}>{{ values.get(name) or "" }}</textarea>
   {% else %}
   <input id="{{ name }}" name="{{ name }}" type="{{ type }}" value="{{ values.get(name) or '' }}"
+    {% if type == "number" %}min="1" max="365" step="1"{% endif %}
     {% if required %}required{% endif %}
     {% if errors.get(name) %}aria-invalid="true" aria-describedby="{{ name }}-error"{% endif %}>
   {% endif %}

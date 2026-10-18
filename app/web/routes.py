@@ -17,12 +17,14 @@ from app.schemas import (
     ApplicationUpdate,
     ContactIn,
     ContactUpdate,
+    FollowUpSettings,
     InteractionIn,
     LinkIn,
     StatusChangeIn,
 )
 from app.services import applications as service
 from app.services import contacts, interactions, links
+from app.services import settings as settings_service
 from app.services.status import InvalidChangeDate, record_status_change
 
 WEB_DIR = Path(__file__).resolve().parent
@@ -473,3 +475,25 @@ def delete_interaction(
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Interaction not found")
     interactions.delete_interaction(session, application, interaction)
     return section(request, "_interactions.html", application, today)
+
+
+@router.get("/settings", response_class=HTMLResponse)
+def settings_page(request: Request, session: SessionDep, saved: bool = False) -> HTMLResponse:
+    values = settings_service.get_follow_up_settings(session).model_dump()
+    return templates.TemplateResponse(
+        request, "settings.html", {"values": values, "errors": {}, "saved": saved}
+    )
+
+
+@router.post("/settings", response_class=HTMLResponse)
+def save_settings(request: Request, fields: FormDep, session: SessionDep) -> Response:
+    data = parse_form(FollowUpSettings, fields)
+    if isinstance(data, dict):
+        return templates.TemplateResponse(
+            request,
+            "settings.html",
+            {"values": fields, "errors": data, "saved": False},
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        )
+    settings_service.update_follow_up_settings(session, data)
+    return redirect(request, "/settings?saved=true")
