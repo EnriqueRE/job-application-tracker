@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Export · Job tracker{% endblock %}
+{% block content %}
+<h1>Export for resume review</h1>
+<p class="muted">Downloads a markdown file of closed-out applications with their full job
+descriptions, grouped by how far each one got. Paste it into Claude to look for patterns.</p>
+<form method="get" action="/api/export.md" class="stack">
+  <fieldset>
+    <legend>Include</legend>
+    {% for value, label in groups.items() %}
+    <label class="check"><input type="checkbox" name="statuses" value="{{ value }}" checked> {{ label }}</label><br>
+    {% endfor %}
+  </fieldset>
+  <div><button type="submit">Download markdown</button></div>
+</form>
+{% endblock %}

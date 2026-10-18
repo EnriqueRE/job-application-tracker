@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% from "_macros.html" import field %}
+{% block title %}{{ heading }} · Job tracker{% endblock %}
+{% block content %}
+<h1>{{ heading }}</h1>
+{% if duplicate_id %}
+<p class="error" role="alert">
+  This application already exists:
+  <a href="/applications/{{ duplicate_id }}">view the existing application</a>.
+</p>
+{% endif %}
+{% if errors.get("form") %}<p class="error" role="alert">{{ errors["form"] }}</p>{% endif %}
+<form method="post" action="{{ action }}" class="stack">
+  {{ field("company", "Company", values, errors, required=true) }}
+  {{ field("title", "Role title", values, errors, required=true) }}
+  {{ field("applied_on", "Applied on", values, errors, type="date", required=true) }}
+  {{ field("job_url", "Job URL", values, errors, type="url") }}
+  {{ field("location", "Location", values, errors) }}
+  {{ field("source", "Source", values, errors) }}
+  {{ field("job_description", "Job description", values, errors, type="textarea") }}
+  {{ field("notes", "Notes", values, errors, type="textarea") }}
+  <div><button type="submit">Save</button></div>
+</form>
+{% endblock %}

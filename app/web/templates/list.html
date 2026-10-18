@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="title-row">
+  <h1>Applications</h1>
+  <a class="button" href="/applications/new">New application</a>
+</div>
+<form class="filters" method="get" action="/" role="search"
+      hx-get="/" hx-target="#rows" hx-push-url="true"
+      hx-trigger="input changed delay:300ms from:input[name=q], change from:input[type=checkbox], submit">
+  <label>Search <input type="search" name="q" value="{{ q }}" placeholder="Company or title"></label>
+  <fieldset>
+    <legend>Status</legend>
+    {% for s in statuses %}
+    <label class="check"><input type="checkbox" name="status" value="{{ s.value }}"{% if s in selected %} checked{% endif %}> {{ s.value | replace("_", " ") }}</label>
+    {% endfor %}
+  </fieldset>
+  <noscript><button type="submit">Filter</button></noscript>
+</form>
+<div id="rows">
+  {% include "_rows.html" %}
+</div>
+{% endblock %}

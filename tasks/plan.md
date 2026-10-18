@@ -84,29 +84,29 @@ This section is only an index.
 Checkpoint: green from a clean clone; reviewed with the owner.
 
 ### [Phase 2: The application record](https://github.com/EnriqueRE/job-application-tracker/milestone/2)
-- [ ] [#4](https://github.com/EnriqueRE/job-application-tracker/issues/4) Create and view an application (API), with duplicate protection
-- [ ] [#5](https://github.com/EnriqueRE/job-application-tracker/issues/5) Web shell and application list page
-- [ ] [#6](https://github.com/EnriqueRE/job-application-tracker/issues/6) New-application form and detail page
-- [ ] [#7](https://github.com/EnriqueRE/job-application-tracker/issues/7) Edit and delete an application
-- [ ] [#8](https://github.com/EnriqueRE/job-application-tracker/issues/8) Status change with a chosen date, plus history (TDD)
+- [x] [#4](https://github.com/EnriqueRE/job-application-tracker/issues/4) Create and view an application (API), with duplicate protection
+- [x] [#5](https://github.com/EnriqueRE/job-application-tracker/issues/5) Web shell and application list page
+- [x] [#6](https://github.com/EnriqueRE/job-application-tracker/issues/6) New-application form and detail page
+- [x] [#7](https://github.com/EnriqueRE/job-application-tracker/issues/7) Edit and delete an application
+- [x] [#8](https://github.com/EnriqueRE/job-application-tracker/issues/8) Status change with a chosen date, plus history (TDD)
 
 Checkpoint: spec success criteria 3 and (partly) 2 are met, so real applications can be logged.
 Review with the owner.
 
 ### [Phase 3: People and context](https://github.com/EnriqueRE/job-application-tracker/milestone/3)
-- [ ] [#9](https://github.com/EnriqueRE/job-application-tracker/issues/9) Links on an application
-- [ ] [#10](https://github.com/EnriqueRE/job-application-tracker/issues/10) Company contacts
-- [ ] [#11](https://github.com/EnriqueRE/job-application-tracker/issues/11) Interactions log
-- [ ] [#12](https://github.com/EnriqueRE/job-application-tracker/issues/12) List filtering and search
+- [x] [#9](https://github.com/EnriqueRE/job-application-tracker/issues/9) Links on an application
+- [x] [#10](https://github.com/EnriqueRE/job-application-tracker/issues/10) Company contacts
+- [x] [#11](https://github.com/EnriqueRE/job-application-tracker/issues/11) Interactions log
+- [x] [#12](https://github.com/EnriqueRE/job-application-tracker/issues/12) List filtering and search
 
 Checkpoint: spec success criterion 2 is fully met (interview prep on one page). Review with the
 owner.
 
 ### [Phase 4: Follow-up and export](https://github.com/EnriqueRE/job-application-tracker/milestone/4)
-- [ ] [#13](https://github.com/EnriqueRE/job-application-tracker/issues/13) Follow-up thresholds and settings page
-- [ ] [#14](https://github.com/EnriqueRE/job-application-tracker/issues/14) Follow-up list and last-activity column (TDD)
-- [ ] [#15](https://github.com/EnriqueRE/job-application-tracker/issues/15) Markdown export for resume review (TDD)
-- [ ] [#16](https://github.com/EnriqueRE/job-application-tracker/issues/16) Backup, persistence check, and README
+- [x] [#13](https://github.com/EnriqueRE/job-application-tracker/issues/13) Follow-up thresholds and settings page
+- [x] [#14](https://github.com/EnriqueRE/job-application-tracker/issues/14) Follow-up list and last-activity column (TDD)
+- [x] [#15](https://github.com/EnriqueRE/job-application-tracker/issues/15) Markdown export for resume review (TDD)
+- [x] [#16](https://github.com/EnriqueRE/job-application-tracker/issues/16) Backup, persistence check, and README
 - [ ] [#17](https://github.com/EnriqueRE/job-application-tracker/issues/17) Checkpoint: Stage 1 complete (blocked by #4–#16, plus a week of real use)
 
 ### Changes from the first breakdown

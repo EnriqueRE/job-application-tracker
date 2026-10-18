@@ -1,0 +1,22 @@
+{% if applications %}
+<table>
+  <thead>
+    <tr><th>Company</th><th>Title</th><th>Status</th><th>Applied</th><th>Last activity</th></tr>
+  </thead>
+  <tbody>
+    {% for application in applications %}
+    <tr>
+      <td>{{ application.company.name }}</td>
+      <td><a href="/applications/{{ application.id }}">{{ application.title }}</a></td>
+      <td><span class="status status-{{ application.status.value }}">{{ application.status.value }}</span></td>
+      <td>{{ application.applied_on.isoformat() }}</td>
+      <td>{{ last_activity(application).isoformat() }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% elif filtered %}
+<p class="empty">No applications match these filters.</p>
+{% else %}
+<p class="empty">No applications yet.</p>
+{% endif %}
