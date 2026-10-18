@@ -1,13 +1,13 @@
 from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.clock import get_today
 from app.db import get_session
-from app.models import Application
+from app.models import Application, Status
 from app.schemas import (
     ApplicationCreate,
     ApplicationOut,
@@ -35,8 +35,13 @@ def duplicate_response(exc: service.DuplicateApplication) -> JSONResponse:
 
 
 @router.get("", response_model=list[ApplicationOut])
-def list_applications(session: SessionDep) -> list[ApplicationOut]:
-    return [ApplicationOut.model_validate(a) for a in service.list_applications(session)]
+def list_applications(
+    session: SessionDep,
+    statuses: Annotated[list[Status], Query(alias="status")] = [],  # noqa: B006
+    q: Annotated[str, Query(description="Matches company or title, ignoring case.")] = "",
+) -> list[ApplicationOut]:
+    found = service.list_applications(session, statuses=statuses, q=q)
+    return [ApplicationOut.model_validate(a) for a in found]
 
 
 @router.post(

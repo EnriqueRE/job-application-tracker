@@ -4,23 +4,19 @@
   <h1>Applications</h1>
   <a class="button" href="/applications/new">New application</a>
 </div>
-{% if applications %}
-<table>
-  <thead>
-    <tr><th>Company</th><th>Title</th><th>Status</th><th>Applied</th></tr>
-  </thead>
-  <tbody>
-    {% for application in applications %}
-    <tr>
-      <td>{{ application.company.name }}</td>
-      <td><a href="/applications/{{ application.id }}">{{ application.title }}</a></td>
-      <td><span class="status status-{{ application.status.value }}">{{ application.status.value }}</span></td>
-      <td>{{ application.applied_on.isoformat() }}</td>
-    </tr>
+<form class="filters" method="get" action="/" role="search"
+      hx-get="/" hx-target="#rows" hx-push-url="true"
+      hx-trigger="input changed delay:300ms from:input[name=q], change from:input[type=checkbox], submit">
+  <label>Search <input type="search" name="q" value="{{ q }}" placeholder="Company or title"></label>
+  <fieldset>
+    <legend>Status</legend>
+    {% for s in statuses %}
+    <label class="check"><input type="checkbox" name="status" value="{{ s.value }}"{% if s in selected %} checked{% endif %}> {{ s.value | replace("_", " ") }}</label>
     {% endfor %}
-  </tbody>
-</table>
-{% else %}
-<p class="empty">No applications yet.</p>
-{% endif %}
+  </fieldset>
+  <noscript><button type="submit">Filter</button></noscript>
+</form>
+<div id="rows">
+  {% include "_rows.html" %}
+</div>
 {% endblock %}

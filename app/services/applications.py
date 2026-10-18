@@ -1,10 +1,11 @@
+from collections.abc import Collection
 from datetime import date
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.models import Application, Company
+from app.models import Application, Company, Status
 from app.schemas import ApplicationCreate, ApplicationUpdate
 from app.services.status import InvalidChangeDate, change_status
 
@@ -37,8 +38,21 @@ def find_duplicate(
     )
 
 
-def list_applications(session: Session) -> list[Application]:
-    query = select(Application).order_by(Application.applied_on.desc(), Application.id.desc())
+def list_applications(
+    session: Session, *, statuses: Collection[Status] = (), q: str = ""
+) -> list[Application]:
+    query = select(Application).join(Application.company)
+    if statuses:
+        query = query.where(Application.status.in_(statuses))
+    if q.strip():
+        term = q.strip()
+        query = query.where(
+            or_(
+                Application.title.icontains(term, autoescape=True),
+                Company.name.icontains(term, autoescape=True),
+            )
+        )
+    query = query.order_by(Application.applied_on.desc(), Application.id.desc())
     return list(session.scalars(query))
 
 

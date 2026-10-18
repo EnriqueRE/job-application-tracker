@@ -2,7 +2,7 @@ from datetime import date
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel, ValidationError
@@ -67,7 +67,9 @@ def _defaults_to_none(model: type[BaseModel], name: str) -> bool:
 
 
 def is_htmx(request: Request) -> bool:
-    return request.headers.get("HX-Request") == "true"
+    # A history restore (back button after hx-push-url) needs the whole page.
+    headers = request.headers
+    return headers.get("HX-Request") == "true" and "HX-History-Restore-Request" not in headers
 
 
 def redirect(request: Request, url: str) -> Response:
@@ -140,9 +142,22 @@ def template_key(template: str) -> str:
 
 
 @router.get("/", response_class=HTMLResponse)
-def list_page(request: Request, session: SessionDep) -> HTMLResponse:
-    applications = service.list_applications(session)
-    return templates.TemplateResponse(request, "list.html", {"applications": applications})
+def list_page(
+    request: Request,
+    session: SessionDep,
+    statuses: Annotated[list[Status], Query(alias="status")] = [],  # noqa: B006
+    q: str = "",
+) -> HTMLResponse:
+    applications = service.list_applications(session, statuses=statuses, q=q)
+    context = {
+        "applications": applications,
+        "statuses": list(Status),
+        "selected": set(statuses),
+        "q": q,
+        "filtered": bool(statuses or q.strip()),
+    }
+    template = "_rows.html" if is_htmx(request) else "list.html"
+    return templates.TemplateResponse(request, template, context)
 
 
 @router.get("/applications/new", response_class=HTMLResponse)
