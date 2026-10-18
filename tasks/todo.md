@@ -30,14 +30,14 @@ and `db` (Postgres 16, a healthcheck, a named volume, and an init script that cr
 `tracker_test`), `.env.example`, and a `Makefile` with `up`, `down`, `test`, `lint`, and `logs`.
 
 **Acceptance criteria:**
-- [ ] The prerequisite `docker compose version` works (see plan risks)
-- [ ] `make up` builds and starts both containers, and `curl localhost:8000/healthz` returns ok
-- [ ] The app container runs as a non-root user and waits for the db healthcheck
+- [x] The prerequisite `docker compose version` works (see plan risks)
+- [x] `make up` builds and starts both containers, and `curl localhost:8000/healthz` returns ok
+- [x] The app container runs as a non-root user and waits for the db healthcheck
 
 **Verification:** `make up && curl -f localhost:8000/healthz` · `docker compose exec app id -u` ≠ 0
 
 **Dependencies:** 1
-**Files:** `Dockerfile`, `compose.yaml`, `docker/db-init/01-test-db.sql`, `.env.example`, `Makefile`
+**Files:** `Dockerfile`, `compose.yaml`, `docker/db-init/01-test-db.sh`, `.env.example`, `Makefile`, `.dockerignore`
 **Scope:** M
 
 ### Task 3: Database session, Alembic, and test harness

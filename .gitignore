@@ -9,4 +9,3 @@ __pycache__/
 htmlcov/
 backups/
 *.sql
-!docker/db-init/*.sql
