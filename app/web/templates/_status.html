@@ -1,0 +1,10 @@
+<p>Status: <span class="status status-{{ application.status.value }}">{{ application.status.value }}</span></p>
+<h2>Status history</h2>
+<ol class="history">
+  {% for change in application.history %}
+  <li>
+    <time datetime="{{ change.changed_on.isoformat() }}">{{ change.changed_on.isoformat() }}</time>
+    {% if change.from_status %}{{ change.from_status.value }} → {% endif %}{{ change.to_status.value }}
+  </li>
+  {% endfor %}
+</ol>

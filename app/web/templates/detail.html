@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ application.company.name }} — {{ application.title }} · Job tracker{% endblock %}
+{% block content %}
+<h1>{{ application.title }}</h1>
+<p class="subtitle">{{ application.company.name }}</p>
+
+<section id="status">
+  {% include "_status.html" %}
+</section>
+
+<section>
+  <dl class="facts">
+    <dt>Applied</dt><dd>{{ application.applied_on.isoformat() }}</dd>
+    {% if application.job_url %}<dt>Job URL</dt><dd><a href="{{ application.job_url }}" rel="noreferrer">{{ application.job_url }}</a></dd>{% endif %}
+    {% if application.location %}<dt>Location</dt><dd>{{ application.location }}</dd>{% endif %}
+    {% if application.source %}<dt>Source</dt><dd>{{ application.source }}</dd>{% endif %}
+  </dl>
+</section>
+
+{% if application.notes %}
+<section>
+  <h2>Notes</h2>
+  <div class="preserve">{{ application.notes }}</div>
+</section>
+{% endif %}
+
+<section>
+  <h2>Job description</h2>
+  {% if application.job_description %}
+  <div class="preserve">{{ application.job_description }}</div>
+  {% else %}
+  <p class="muted">No job description saved.</p>
+  {% endif %}
+</section>
+{% endblock %}
