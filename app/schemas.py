@@ -76,6 +76,13 @@ class ApplicationUpdate(BaseModel):
         return self
 
 
+class StatusChangeIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    status: Status
+    changed_on: date | None = Field(default=None, description="Defaults to today.")
+
+
 class CompanyOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

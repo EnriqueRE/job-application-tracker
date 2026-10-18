@@ -1,4 +1,17 @@
 <p>Status: <span class="status status-{{ application.status.value }}">{{ application.status.value }}</span></p>
+<form class="inline-form" method="post" action="/applications/{{ application.id }}/status"
+      hx-post="/applications/{{ application.id }}/status" hx-target="#status">
+  <label>Change to
+    <select name="status">
+      {% for s in statuses %}
+      <option value="{{ s.value }}" {% if s == application.status %}selected{% endif %}>{{ s.value }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>on <input type="date" name="changed_on" value="{{ (attempted or {}).get('changed_on') or today.isoformat() }}" max="{{ today.isoformat() }}"></label>
+  <button type="submit">Update status</button>
+</form>
+{% if status_error %}<p class="error" role="alert">{{ status_error }}</p>{% endif %}
 <h2>Status history</h2>
 <ol class="history">
   {% for change in application.history %}

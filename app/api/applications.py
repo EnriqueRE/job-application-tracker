@@ -8,9 +8,15 @@ from sqlalchemy.orm import Session
 from app.clock import get_today
 from app.db import get_session
 from app.models import Application
-from app.schemas import ApplicationCreate, ApplicationOut, ApplicationUpdate, DuplicateOut
+from app.schemas import (
+    ApplicationCreate,
+    ApplicationOut,
+    ApplicationUpdate,
+    DuplicateOut,
+    StatusChangeIn,
+)
 from app.services import applications as service
-from app.services.status import InvalidChangeDate
+from app.services.status import InvalidChangeDate, record_status_change
 
 router = APIRouter(prefix="/api/applications", tags=["applications"])
 
@@ -78,3 +84,17 @@ def update_application(
 def delete_application(application_id: int, session: SessionDep) -> Response:
     service.delete_application(session, get_or_404(session, application_id))
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/{application_id}/status", response_model=ApplicationOut)
+def change_status(
+    application_id: int, data: StatusChangeIn, session: SessionDep, today: TodayDep
+) -> ApplicationOut:
+    application = get_or_404(session, application_id)
+    try:
+        record_status_change(
+            session, application, data.status, changed_on=data.changed_on, today=today
+        )
+    except InvalidChangeDate as exc:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(exc)) from exc
+    return ApplicationOut.model_validate(application)

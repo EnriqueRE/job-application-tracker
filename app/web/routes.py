@@ -10,10 +10,10 @@ from sqlalchemy.orm import Session
 
 from app.clock import get_today
 from app.db import get_session
-from app.models import Application
-from app.schemas import ApplicationCreate, ApplicationFields, ApplicationUpdate
+from app.models import Application, Status
+from app.schemas import ApplicationCreate, ApplicationFields, ApplicationUpdate, StatusChangeIn
 from app.services import applications as service
-from app.services.status import InvalidChangeDate
+from app.services.status import InvalidChangeDate, record_status_change
 
 WEB_DIR = Path(__file__).resolve().parent
 STATIC_DIR = WEB_DIR / "static"
@@ -132,10 +132,47 @@ def create_application(
     return redirect(request, f"/applications/{application.id}")
 
 
+def detail_context(application: Application, today: date, **extra: Any) -> dict[str, Any]:
+    return {"application": application, "today": today, "statuses": list(Status), **extra}
+
+
 @router.get("/applications/{application_id}", response_class=HTMLResponse)
-def detail_page(request: Request, application_id: int, session: SessionDep) -> HTMLResponse:
+def detail_page(
+    request: Request, application_id: int, session: SessionDep, today: TodayDep
+) -> HTMLResponse:
     application = get_or_404(session, application_id)
-    return templates.TemplateResponse(request, "detail.html", {"application": application})
+    return templates.TemplateResponse(request, "detail.html", detail_context(application, today))
+
+
+@router.post("/applications/{application_id}/status", response_class=HTMLResponse)
+def change_status(
+    request: Request,
+    application_id: int,
+    fields: FormDep,
+    session: SessionDep,
+    today: TodayDep,
+) -> Response:
+    application = get_or_404(session, application_id)
+    data = parse_form(StatusChangeIn, fields)
+    error: str | None = None
+    if isinstance(data, dict):
+        error = next(iter(data.values()))
+    else:
+        try:
+            record_status_change(
+                session, application, data.status, changed_on=data.changed_on, today=today
+            )
+        except InvalidChangeDate as exc:
+            error = str(exc)
+    if error is None and not is_htmx(request):
+        return redirect(request, f"/applications/{application_id}")
+    template = "_status.html" if is_htmx(request) else "detail.html"
+    return templates.TemplateResponse(
+        request,
+        template,
+        detail_context(application, today, status_error=error, attempted=fields),
+        status_code=status.HTTP_200_OK if error is None else status.HTTP_422_UNPROCESSABLE_CONTENT,
+    )
 
 
 def form_values(application: Application) -> dict[str, Any]:

@@ -4,6 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Job tracker{% endblock %}</title>
+  {# Swap 409/422 responses too: they carry inline error markup for the form that sent them. #}
+  <meta name="htmx-config" content='{"responseHandling": [{"code": "204", "swap": false}, {"code": "[23]..", "swap": true}, {"code": "409|422", "swap": true}, {"code": "[45]..", "swap": false, "error": true}]}'>
   <link rel="stylesheet" href="/static/app.css">
   <script src="/static/htmx.min.js" defer></script>
 </head>

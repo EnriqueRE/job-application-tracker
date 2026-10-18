@@ -44,3 +44,8 @@ button.secondary { background: transparent; color: var(--accent); }
 button.danger { background: var(--error); border-color: var(--error); }
 .actions { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
 .actions form { margin: 0; }
+.inline-form { display: flex; gap: 0.5rem; align-items: end; flex-wrap: wrap; }
+.inline-form label { display: flex; flex-direction: column; font-size: 0.9em; color: var(--muted); }
+.inline-form input, .inline-form select { width: auto; }
+.history { padding-left: 1.25rem; }
+.history time { font-variant-numeric: tabular-nums; margin-right: 0.5rem; color: var(--muted); }
