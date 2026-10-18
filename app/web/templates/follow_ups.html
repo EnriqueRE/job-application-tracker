@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Follow-ups · Job tracker{% endblock %}
+{% block content %}
+<h1>Follow-ups</h1>
+<p class="muted">Open applications with no activity for longer than their status's
+<a href="/settings">threshold</a>, quietest first.</p>
+{% if follow_ups %}
+<table>
+  <thead>
+    <tr><th>Company</th><th>Title</th><th>Status</th><th>Last activity</th><th>Overdue</th></tr>
+  </thead>
+  <tbody>
+    {% for f in follow_ups %}
+    <tr>
+      <td>{{ f.application.company.name }}</td>
+      <td><a href="/applications/{{ f.application.id }}">{{ f.application.title }}</a></td>
+      <td><span class="status status-{{ f.application.status.value }}">{{ f.application.status.value }}</span></td>
+      <td>{{ f.last_activity_on.isoformat() }} <span class="muted">({{ f.days_since_activity }} days ago)</span></td>
+      <td>{{ f.days_overdue }} day{{ "" if f.days_overdue == 1 else "s" }} overdue</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty">Nothing to follow up right now.</p>
+{% endif %}
+{% endblock %}

@@ -227,3 +227,15 @@ class ApplicationOut(BaseModel):
 class DuplicateOut(BaseModel):
     detail: str
     existing_id: int
+
+
+class FollowUpOut(BaseModel):
+    id: int
+    company: str
+    title: str
+    status: Status
+    applied_on: date
+    last_activity_on: date
+    days_since_activity: int
+    threshold_days: int
+    days_overdue: int

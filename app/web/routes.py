@@ -25,6 +25,7 @@ from app.schemas import (
 from app.services import applications as service
 from app.services import contacts, interactions, links
 from app.services import settings as settings_service
+from app.services.follow_up import application_last_activity, list_follow_ups
 from app.services.status import InvalidChangeDate, record_status_change
 
 WEB_DIR = Path(__file__).resolve().parent
@@ -157,6 +158,7 @@ def list_page(
         "selected": set(statuses),
         "q": q,
         "filtered": bool(statuses or q.strip()),
+        "last_activity": application_last_activity,
     }
     template = "_rows.html" if is_htmx(request) else "list.html"
     return templates.TemplateResponse(request, template, context)
@@ -497,3 +499,11 @@ def save_settings(request: Request, fields: FormDep, session: SessionDep) -> Res
         )
     settings_service.update_follow_up_settings(session, data)
     return redirect(request, "/settings?saved=true")
+
+
+@router.get("/follow-ups", response_class=HTMLResponse)
+def follow_ups_page(request: Request, session: SessionDep, today: TodayDep) -> HTMLResponse:
+    follow_ups = list_follow_ups(session, today=today)
+    return templates.TemplateResponse(
+        request, "follow_ups.html", {"follow_ups": follow_ups, "today": today}
+    )

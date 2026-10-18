@@ -3,7 +3,7 @@ from datetime import date
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.models import Application, Company, Status
 from app.schemas import ApplicationCreate, ApplicationUpdate
@@ -41,7 +41,11 @@ def find_duplicate(
 def list_applications(
     session: Session, *, statuses: Collection[Status] = (), q: str = ""
 ) -> list[Application]:
-    query = select(Application).join(Application.company)
+    query = (
+        select(Application)
+        .join(Application.company)
+        .options(selectinload(Application.history), selectinload(Application.interactions))
+    )
     if statuses:
         query = query.where(Application.status.in_(statuses))
     if q.strip():

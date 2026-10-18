@@ -1,7 +1,7 @@
 {% if applications %}
 <table>
   <thead>
-    <tr><th>Company</th><th>Title</th><th>Status</th><th>Applied</th></tr>
+    <tr><th>Company</th><th>Title</th><th>Status</th><th>Applied</th><th>Last activity</th></tr>
   </thead>
   <tbody>
     {% for application in applications %}
@@ -10,6 +10,7 @@
       <td><a href="/applications/{{ application.id }}">{{ application.title }}</a></td>
       <td><span class="status status-{{ application.status.value }}">{{ application.status.value }}</span></td>
       <td>{{ application.applied_on.isoformat() }}</td>
+      <td>{{ last_activity(application).isoformat() }}</td>
     </tr>
     {% endfor %}
   </tbody>
